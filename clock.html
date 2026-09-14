@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ساعة رقمية - مناطق زمنية متعددة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Cairo', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+        }
+        
+        .clock-card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .clock-card:hover {
+            background: rgba(255, 255, 255, 0.15);
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        
+        .digital-time {
+            font-family: 'Courier New', monospace;
+            font-size: 3.5rem;
+            font-weight: bold;
+            color: #fff;
+            text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+            letter-spacing: 2px;
+        }
+        
+        .timezone-label {
+            font-size: 1.2rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+        
+        .timezone-offset {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+        
+        .date-display {
+            font-size: 1rem;
+            color: rgba(255, 255, 255, 0.8);
+            margin-top: 10px;
+        }
+        
+        .am-pm {
+            font-size: 1.5rem;
+            color: rgba(255, 255, 255, 0.8);
+        }
+        
+        .add-timezone-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .add-timezone-btn:hover {
+            background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .delete-btn {
+            background: rgba(239, 68, 68, 0.8);
+            color: white;
+            border: none;
+            padding: 8px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .delete-btn:hover {
+            background: rgba(239, 68, 68, 1);
+        }
+        
+        .modal {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 50;
+            backdrop-filter: blur(5px);
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            width: 90%;
+            max-width: 500px;
+        }
+        
+        .modal-header {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #555;
+        }
+        
+        .form-group select,
+        .form-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e5e7eb;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-family: 'Cairo', sans-serif;
+            transition: all 0.3s ease;
+        }
+        
+        .form-group select:focus,
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+        
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        
+        .modal-buttons button {
+            flex: 1;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-save {
+            background: #667eea;
+            color: white;
+        }
+        
+        .btn-save:hover {
+            background: #5568d3;
+        }
+        
+        .btn-cancel {
+            background: #e5e7eb;
+            color: #333;
+        }
+        
+        .btn-cancel:hover {
+            background: #d1d5db;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+            color: white;
+        }
+        
+        .header h1 {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+        
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+        
+        .settings-btn {
+            position: fixed;
+            top-5;
+            right-5;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 40;
+        }
+        
+        .settings-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: scale(1.1);
+        }
+        
+        .empty-state {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 40px;
+        }
+        
+        .empty-state i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+    <!-- زر الإعدادات -->
+    <button class="settings-btn" onclick="openModal()">
+        <i class="fa-solid fa-plus"></i>
+    </button>
+
+    <!-- الرأس -->
+    <div class="header">
+        <h1>🕐 ساعة عالمية</h1>
+        <p>عرض الوقت في مناطق زمنية مختلفة حول العالم</p>
+    </div>
+
+    <!-- حاوية الساعات -->
+    <div class="container mx-auto px-4 pb-10">
+        <div id="clocksContainer" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <!-- الساعات ستُضاف هنا -->
+        </div>
+        
+        <div id="emptyState" class="empty-state hidden">
+            <i class="fa-solid fa-hourglass-end"></i>
+            <p style="font-size: 1.2rem;">لا توجد مناطق زمنية مضافة</p>
+            <p style="margin-top: 10px;">اضغط على الزر الأزرق لإضافة منطقة زمنية</p>
+        </div>
+    </div>
+
+    <!-- نافذة الإضافة -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <i class="fa-solid fa-globe"></i> إضافة منطقة زمنية جديدة
+            </div>
+            <div class="form-group">
+                <label for="timezoneSelect">اختر المنطقة الزمنية:</label>
+                <select id="timezoneSelect">
+                    <option value="">-- اختر من القائمة --</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label for="labelInput">تسمية مخصصة (اختياري):</label>
+                <input type="text" id="labelInput" placeholder="مثال: مصر، الإمارات، السعودية...">
+            </div>
+            <div class="modal-buttons">
+                <button class="btn-save" onclick="addTimezone()">
+                    <i class="fa-solid fa-check"></i> إضافة
+                </button>
+                <button class="btn-cancel" onclick="closeModal()">
+                    <i class="fa-solid fa-xmark"></i> إلغاء
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // المناطق الزمنية الشهيرة
+        const timezones = [
+            { name: 'القاهرة (مصر)', timezone: 'Africa/Cairo' },
+            { name: 'دبي (الإمارات)', timezone: 'Asia/Dubai' },
+            { name: 'الرياض (السعودية)', timezone: 'Asia/Riyadh' },
+            { name: 'بيروت (لبنان)', timezone: 'Asia/Beirut' },
+            { name: 'عمّان (الأردن)', timezone: 'Asia/Amman' },
+            { name: 'بغداد (العراق)', timezone: 'Asia/Baghdad' },
+            { name: 'الكويت', timezone: 'Asia/Kuwait' },
+            { name: 'قطر', timezone: 'Asia/Qatar' },
+            { name: 'البحرين', timezone: 'Asia/Bahrain' },
+            { name: 'عمّان (عمان)', timezone: 'Asia/Muscat' },
+            { name: 'اسطنبول (تركيا)', timezone: 'Europe/Istanbul' },
+            { name: 'لندن (بريطانيا)', timezone: 'Europe/London' },
+            { name: 'باريس (فرنسا)', timezone: 'Europe/Paris' },
+            { name: 'برلين (ألمانيا)', timezone: 'Europe/Berlin' },
+            { name: 'موسكو (روسيا)', timezone: 'Europe/Moscow' },
+            { name: 'دلهي (الهند)', timezone: 'Asia/Kolkata' },
+            { name: 'بانكوك (تايلاند)', timezone: 'Asia/Bangkok' },
+            { name: 'طوكيو (اليابان)', timezone: 'Asia/Tokyo' },
+            { name: 'سيدني (أستراليا)', timezone: 'Australia/Sydney' },
+            { name: 'نيويورك (أمريكا)', timezone: 'America/New_York' },
+            { name: 'لوس أنجلس (أمريكا)', timezone: 'America/Los_Angeles' },
+            { name: 'تورنتو (كندا)', timezone: 'America/Toronto' },
+            { name: 'ساو باولو (البرازيل)', timezone: 'America/Sao_Paulo' },
+            { name: 'بوينس آيرس (الأرجنتين)', timezone: 'America/Argentina/Buenos_Aires' },
+            { name: 'جوهانسبرج (جنوب أفريقيا)', timezone: 'Africa/Johannesburg' },
+            { name: 'لاجوس (نيجيريا)', timezone: 'Africa/Lagos' },
+            { name: 'كينشاسا (الكونغو)', timezone: 'Africa/Kinshasa' },
+            { name: 'سنغافورة', timezone: 'Asia/Singapore' },
+            { name: 'هونج كونج', timezone: 'Asia/Hong_Kong' },
+            { name: 'شنغهاي (الصين)', timezone: 'Asia/Shanghai' }
+        ];
+
+        let savedTimezones = JSON.parse(localStorage.getItem('savedTimezones')) || [
+            { name: 'القاهرة', timezone: 'Africa/Cairo', label: 'مصر 🇪🇬' },
+            { name: 'دبي', timezone: 'Asia/Dubai', label: 'الإمارات 🇦🇪' },
+            { name: 'لندن', timezone: 'Europe/London', label: 'بريطانيا 🇬🇧' },
+            { name: 'نيويورك', timezone: 'America/New_York', label: 'أمريكا 🇺🇸' },
+            { name: 'طوكيو', timezone: 'Asia/Tokyo', label: 'اليابان 🇯🇵' }
+        ];
+
+        // تحديث الساعات
+        function updateClocks() {
+            const container = document.getElementById('clocksContainer');
+            const emptyState = document.getElementById('emptyState');
+            
+            if (savedTimezones.length === 0) {
+                container.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+            container.innerHTML = '';
+            
+            savedTimezones.forEach((tz, index) => {
+                const now = new Date();
+                const formatter = new Intl.DateTimeFormat('ar-EG', {
+                    timeZone: tz.timezone,
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit',
+                    hour12: false
+                });
+                
+                const dateFormatter = new Intl.DateTimeFormat('ar-EG', {
+                    timeZone: tz.timezone,
+                    weekday: 'long',
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric'
+                });
+                
+                const time = formatter.format(now);
+                const date = dateFormatter.format(now);
+                
+                // حساب الفرق الزمني
+                const tzDate = new Date(now.toLocaleString('en-US', { timeZone: tz.timezone }));
+                const diff = (tzDate - new Date(now.toLocaleString('en-US', { timeZone: 'UTC' }))) / (1000 * 60 * 60);
+                const offset = (diff > 0 ? '+' : '') + Math.floor(diff) + ':' + String(Math.abs(diff % 1) * 60).padStart(2, '0');
+                
+                const clockCard = document.createElement('div');
+                clockCard.className = 'clock-card p-8 rounded-3xl';
+                clockCard.innerHTML = `
+                    <div class="flex justify-between items-start mb-4">
+                        <div>
+                            <div class="timezone-label">${tz.label || tz.name}</div>
+                            <div class="timezone-offset">UTC ${offset}</div>
+                        </div>
+                        <button onclick="removeTimezone(${index})" class="delete-btn" title="حذف">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </div>
+                    <div class="digital-time" id="time-${index}">${time}</div>
+                    <div class="date-display">${date}</div>
+                `;
+                
+                container.appendChild(clockCard);
+            });
+        }
+
+        // إضافة منطقة زمنية
+        function addTimezone() {
+            const select = document.getElementById('timezoneSelect');
+            const label = document.getElementById('labelInput').value.trim();
+            const selectedValue = select.value;
+            
+            if (!selectedValue) {
+                alert('برجاء اختيار منطقة زمنية!');
+                return;
+            }
+            
+            const selected = timezones.find(tz => tz.timezone === selectedValue);
+            
+            savedTimezones.push({
+                name: selected.name,
+                timezone: selected.timezone,
+                label: label || selected.name
+            });
+            
+            localStorage.setItem('savedTimezones', JSON.stringify(savedTimezones));
+            updateClocks();
+            closeModal();
+            document.getElementById('labelInput').value = '';
+            select.value = '';
+        }
+
+        // حذف منطقة زمنية
+        function removeTimezone(index) {
+            if (confirm('هل تريد حذف هذه المنطقة الزمنية؟')) {
+                savedTimezones.splice(index, 1);
+                localStorage.setItem('savedTimezones', JSON.stringify(savedTimezones));
+                updateClocks();
+            }
+        }
+
+        // فتح النافذة
+        function openModal() {
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        // إغلاق النافذة
+        function closeModal() {
+            document.getElementById('modal').classList.add('hidden');
+        }
+
+        // إغلاق النافذة عند الضغط خارجها
+        document.getElementById('modal')?.addEventListener('click', (e) => {
+            if (e.target.id === 'modal') {
+                closeModal();
+            }
+        });
+
+        // ملء قائمة المناطق الزمنية
+        function populateTimezones() {
+            const select = document.getElementById('timezoneSelect');
+            timezones.forEach(tz => {
+                const option = document.createElement('option');
+                option.value = tz.timezone;
+                option.textContent = tz.name;
+                select.appendChild(option);
+            });
+        }
+
+        // تشغيل البرنامج
+        document.addEventListener('DOMContentLoaded', () => {
+            populateTimezones();
+            updateClocks();
+            
+            // تحديث الساعات كل ثانية
+            setInterval(updateClocks, 1000);
+        });
+    </script>
+</body>
+</html>
