@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>متجر مدبولي للخضار والفاكهة</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { cairo: ['Cairo', 'sans-serif'] },
+                    colors: { primary: '#16a34a', secondary: '#ca8a04' }
+                }
+            }
+        }
+    </script>
+    <style> body { font-family: 'Cairo', sans-serif; } </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+    <!-- النافبار العلوي -->
+    <header id="mainHeader" class="bg-primary text-white shadow-md sticky top-0 z-40 transition-colors duration-300">
+        <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div id="navLogoContainer" class="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
+                    <img id="navLogoImg" src="" alt="شعار" class="w-full h-full object-cover hidden">
+                    <i id="navLogoIcon" class="fa-solid fa-basket-shopping text-xl"></i>
+                </div>
+                <div>
+                    <h1 id="navStoreName" class="font-bold text-lg leading-tight">متجر مدبولي للخضار والفاكهة</h1>
+                    <p class="text-xs text-white/80">طازج من الفلاح لبيتك</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button onclick="toggleCartModal()" class="relative bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition flex items-center gap-2 px-3">
+                    <i class="fa-solid fa-cart-shopping text-lg"></i>
+                    <span id="cartBadge" class="bg-secondary text-white text-xs font-bold px-2 py-0.5 rounded-full">0</span>
+                </button>
+                <button onclick="openAdminModal()" class="bg-white/10 hover:bg-white/20 p-2.5 rounded-full transition" title="لوحة التحكم">
+                    <i class="fa-solid fa-gear text-lg"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- المحتوى الرئيسي للمتجر -->
+    <main class="container mx-auto px-4 py-6 flex-grow">
+        <div class="mb-6 flex flex-col md:flex-row gap-4 justify-between items-center">
+            <div class="relative w-full md:w-96">
+                <input type="text" id="searchInput" oninput="filterProducts()" placeholder="ابحث عن خضار أو فاكهة..." class="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 pr-11 text-sm focus:outline-none focus:border-primary shadow-sm">
+                <i class="fa-solid fa-magnifying-glass absolute right-4 top-3.5 text-slate-400"></i>
+            </div>
+            <div id="categoryFilters" class="flex gap-2 overflow-x-auto w-full md:w-auto pb-2 md:pb-0">
+                <button onclick="setCategory('all')" class="cat-btn px-4 py-2 rounded-xl text-sm font-semibold bg-primary text-white transition shadow-sm">الكل</button>
+                <button onclick="setCategory('خضار')" class="cat-btn px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 hover:bg-slate-100 transition shadow-sm">خضروات</button>
+                <button onclick="setCategory('فاكهة')" class="cat-btn px-4 py-2 rounded-xl text-sm font-semibold bg-white text-slate-600 hover:bg-slate-100 transition shadow-sm">فواكه</button>
+            </div>
+        </div>
+
+        <div id="productsGrid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4"></div>
+    </main>
+
+    <!-- زر واتساب العائم -->
+    <a id="floatingWhatsappBtn" href="https://wa.me/201000000000" target="_blank" class="fixed bottom-6 left-6 bg-green-600 text-white w-14 h-14 rounded-full shadow-2xl flex items-center justify-center text-3xl hover:scale-110 transition z-40" title="تواصل مع البائع عبر واتساب">
+        <i class="fa-brands fa-whatsapp"></i>
+    </a>
+
+    <!-- نافذة السلة -->
+    <div id="cartModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex justify-end">
+        <div class="bg-white w-full max-w-md h-full flex flex-col shadow-2xl">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-slate-50">
+                <h3 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-cart-shopping text-primary"></i> سلة الطلبات وبيانات العميل</h3>
+                <button onclick="toggleCartModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            
+            <div class="flex-grow overflow-y-auto p-4 space-y-4">
+                <div id="cartItemsContainer" class="space-y-3"></div>
+
+                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 space-y-3">
+                    <h4 class="font-bold text-xs text-primary">بيانات التوصيل الخاصة بك:</h4>
+                    <div>
+                        <label class="text-[11px] text-slate-600 font-semibold">الاسم:</label>
+                        <input type="text" id="clientName" placeholder="أدخل اسمك الكامل" class="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs mt-1 focus:outline-none focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-600 font-semibold">رقم الموبايل:</label>
+                        <input type="tel" id="clientPhone" placeholder="رقم الهاتف للتواصل" class="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs mt-1 focus:outline-none focus:border-primary">
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-600 font-semibold">العنوان بالتفصيل:</label>
+                        <textarea id="clientAddress" rows="2" placeholder="الشارع، العمارة، الدور، الشقة..." class="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs mt-1 focus:outline-none focus:border-primary"></textarea>
+                    </div>
+                    <div>
+                        <label class="text-[11px] text-slate-600 font-semibold">ملاحظات إضافية (اختياري):</label>
+                        <input type="text" id="clientNotes" placeholder="مثال: الأوردر مستعجل..." class="w-full bg-white border border-slate-200 rounded-lg p-2 text-xs mt-1 focus:outline-none focus:border-primary">
+                    </div>
+                </div>
+            </div>
+
+            <div class="p-4 border-t border-slate-100 bg-slate-50 space-y-3">
+                <div class="space-y-1">
+                    <label class="text-xs font-bold text-slate-600">اختر منطقة التوصيل:</label>
+                    <select id="deliveryZoneSelect" onchange="updateCartTotal()" class="w-full bg-white border border-slate-200 rounded-xl p-2.5 text-sm focus:outline-none focus:border-primary"></select>
+                </div>
+                <div class="flex justify-between items-center text-lg font-bold">
+                    <span>الإجمالي الكلي (شامل الشحن):</span>
+                    <span id="cartTotalPrice" class="text-primary">0 ج.م</span>
+                </div>
+                <button onclick="checkoutWhatsApp()" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-xl transition flex items-center justify-center gap-2 shadow-md">
+                    <i class="fa-brands fa-whatsapp text-xl"></i> إتمام الطلب عبر واتساب
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة دخول البائع -->
+    <div id="adminLoginModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-sm rounded-2xl shadow-2xl p-6 space-y-4">
+            <div class="flex justify-between items-center">
+                <h3 class="font-bold text-lg">لوحة تحكم البائع</h3>
+                <button onclick="closeAdminLogin()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div>
+                <label class="text-xs font-bold text-slate-600 mb-1 block">كلمة المرور:</label>
+                <input type="password" id="adminPasswordInput" class="w-full bg-slate-50 border border-slate-200 rounded-xl p-3 text-sm focus:outline-none focus:border-primary" placeholder="أدخل كلمة المرور">
+            </div>
+            <button onclick="verifyAdminPassword()" class="w-full bg-primary text-white font-bold py-3 rounded-xl transition shadow-md">دخول</button>
+        </div>
+    </div>
+
+    <!-- لوحة إعدادات متقدمة للبائع -->
+    <div id="adminDashboardModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 hidden flex justify-end">
+        <div class="bg-white w-full max-w-xl h-full flex flex-col shadow-2xl">
+            <div class="p-4 border-b border-slate-100 flex justify-between items-center bg-primary text-white">
+                <h3 class="font-bold text-lg flex items-center gap-2"><i class="fa-solid fa-sliders"></i> لوحة تحكم وإدارة المتجر</h3>
+                <button onclick="closeAdminDashboard()" class="text-white/80 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+            </div>
+            <div class="flex-grow overflow-y-auto p-6 space-y-6">
+                <!-- إعدادات عامة وشعار -->
+                <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <h4 class="font-bold text-sm text-primary">البيانات الأساسية وشعار المتجر</h4>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-600">اسم المتجر:</label>
+                        <input type="text" id="settingStoreName" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm mt-1">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-600">اختر شعار المتجر:</label>
+                        <input type="file" id="settingLogoFile" accept="image/*" onchange="handleLogoUpload(event)" class="w-full bg-white border border-slate-200 rounded-lg p-2 text-sm mt-1 file:mr-4 file:py-1 file:px-4 file:rounded-md file:border-0 file:text-xs file:font-semibold file:bg-primary file:text-white">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-600">رقم واتساب البائع:</label>
+                        <input type="text" id="settingWhatsApp" placeholder="2010xxxxxxxx" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm mt-1">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-600">رابط جوجل شيت (Google Sheet Web App URL):</label>
+                        <input type="text" id="settingGoogleSheet" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm mt-1">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-600">لون الهوية البصرية:</label>
+                        <input type="color" id="settingColor" class="w-full h-10 bg-white border border-slate-200 rounded-lg p-1 mt-1 cursor-pointer">
+                    </div>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-600">تغيير كلمة المرور الإدارية:</label>
+                        <input type="password" id="settingPassword" placeholder="اتركه فارغاً لعدم التغيير" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm mt-1">
+                    </div>
+                    <button onclick="saveGeneralSettings()" class="bg-primary text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition">حفظ الإعدادات</button>
+                </div>
+
+                <!-- إدارة مناطق الشحن -->
+                <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <h4 class="font-bold text-sm text-primary">إدارة مناطق وأسعار الشحن</h4>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="newZoneName" placeholder="اسم المنطقة" class="bg-white border border-slate-200 rounded-lg p-2 text-sm">
+                        <input type="number" id="newZoneFee" placeholder="تكلفة الشحن (ج.م)" class="bg-white border border-slate-200 rounded-lg p-2 text-sm">
+                    </div>
+                    <button onclick="addNewZone()" class="w-full bg-secondary text-white text-sm font-bold py-2 rounded-lg shadow transition">إضافة منطقة شحن</button>
+                    <div id="adminZonesList" class="space-y-2 max-h-36 overflow-y-auto mt-2"></div>
+                </div>
+
+                <!-- إضافة منتج -->
+                <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
+                    <h4 class="font-bold text-sm text-primary">إدارة وإضافة المنتجات</h4>
+                    <div class="grid grid-cols-2 gap-2">
+                        <input type="text" id="newProdName" placeholder="اسم المنتج" class="bg-white border border-slate-200 rounded-lg p-2 text-sm">
+                        <input type="number" id="newProdPrice" placeholder="السعر (ج.م)" class="bg-white border border-slate-200 rounded-lg p-2 text-sm">
+                    </div>
+                    <div class="grid grid-cols-3 gap-2 items-center">
+                        <select id="newProdCategory" class="bg-white border border-slate-200 rounded-lg p-2 text-sm">
+                            <option value="خضار">خضار</option>
+                            <option value="فاكهة">فاكهة</option>
+                        </select>
+                        <select id="newProdUnit" class="bg-white border border-slate-200 rounded-lg p-2 text-sm font-bold text-primary">
+                            <option value="كيلو">كيلو</option>
+                            <option value="حزمة">حزمة</option>
+                            <option value="قطعة">قطعة</option>
+                        </select>
+                        <input type="file" id="newProdImageFile" accept="image/*" class="bg-white border border-slate-200 rounded-lg p-1 text-xs file:mr-1 file:py-1 file:px-2 file:rounded file:border-0 file:text-[10px] file:bg-primary file:text-white">
+                    </div>
+                    <button onclick="addNewProduct()" class="w-full bg-secondary text-white text-sm font-bold py-2 rounded-lg shadow transition">إضافة المنتج للمتجر</button>
+                    <div id="adminProductsList" class="space-y-2 max-h-40 overflow-y-auto mt-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let storeConfig = JSON.parse(localStorage.getItem('madbouly_config')) || {
+            name: "متجر مدبولي للخضار والفاكهة",
+            whatsapp: "201000000000",
+            primaryColor: "#16a34a",
+            adminPassword: "444888",
+            logoUrl: "",
+            googleSheetUrl: ""
+        };
+
+        let deliveryZones = JSON.parse(localStorage.getItem('madbouly_zones')) || [
+            { name: "الدقي والعجوزة", fee: 20 },
+            { name: "المهندسين", fee: 25 },
+            { name: "الزمالك", fee: 30 }
+        ];
+
+        let products = JSON.parse(localStorage.getItem('madbouly_products')) || [
+            { id: 1, name: "طماطم بلدي طازجة", price: 15, unit: "كيلو", category: "خضار", image: "https://images.unsplash.com/photo-1582284540020-8acbe03f4924?w=300" },
+            { id: 2, name: "جرجير فريش", price: 5, unit: "حزمة", category: "خضار", image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?w=300" },
+            { id: 3, name: "كرنب سلطة", price: 20, unit: "قطعة", category: "خضار", image: "https://images.unsplash.com/photo-1550989460-0adf9ea622e2?w=300" },
+            { id: 4, name: "موز بلدي ممتاز", price: 25, unit: "كيلو", category: "فاكهة", image: "https://images.unsplash.com/photo-1571771894821-ce9b6c11b08e?w=300" }
+        ];
+
+        let cart = [];
+        let currentCategory = 'all';
+        let tempLogoBase64 = storeConfig.logoUrl || "";
+
+        document.addEventListener('DOMContentLoaded', () => {
+            applyStoreConfig();
+            renderProducts();
+            populateDeliveryZones();
+        });
+
+        function applyStoreConfig() {
+            document.getElementById('navStoreName').innerText = storeConfig.name;
+            document.documentElement.style.setProperty('--primary-color', storeConfig.primaryColor);
+            document.getElementById('mainHeader').style.backgroundColor = storeConfig.primaryColor;
+            document.getElementById('floatingWhatsappBtn').href = `https://wa.me/${storeConfig.whatsapp}`;
+            
+            const logoImg = document.getElementById('navLogoImg');
+            const logoIcon = document.getElementById('navLogoIcon');
+            if (storeConfig.logoUrl && storeConfig.logoUrl.trim() !== '') {
+                logoImg.src = storeConfig.logoUrl;
+                logoImg.classList.remove('hidden');
+                logoIcon.classList.add('hidden');
+            } else {
+                logoImg.classList.add('hidden');
+                logoIcon.classList.remove('hidden');
+            }
+        }
+
+        function handleLogoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) { tempLogoBase64 = e.target.result; };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function renderProducts() {
+            const grid = document.getElementById('productsGrid');
+            grid.innerHTML = '';
+            const searchVal = document.getElementById('searchInput').value.toLowerCase();
+            const filtered = products.filter(p => {
+                const matchCat = currentCategory === 'all' || p.category === currentCategory;
+                const matchName = p.name.toLowerCase().includes(searchVal);
+                return matchCat && matchName;
+            });
+
+            if (filtered.length === 0) {
+                grid.innerHTML = `<div class="col-span-full text-center py-12 text-slate-400">عذراً، مفيش منتجات مطابقة للبحث!</div>`;
+                return;
+            }
+
+            filtered.forEach(p => {
+                const unitText = p.unit || 'كيلو';
+                const stepVal = unitText === 'كيلو' ? '0.05' : '1';
+                const defaultVal = unitText === 'كيلو' ? '1' : '1';
+
+                grid.innerHTML += `
+                    <div class="bg-white rounded-2xl border border-slate-100 shadow-sm hover:shadow-md transition overflow-hidden flex flex-col justify-between">
+                        <div>
+                            <div class="h-36 bg-slate-100 overflow-hidden relative">
+                                <img src="${p.image}" alt="${p.name}" class="w-full h-full object-cover" onerror="this.src='https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=300'">
+                            </div>
+                            <div class="p-3">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[10px] bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md font-semibold">${p.category}</span>
+                                    <span class="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-md font-bold">بـالـ${unitText}</span>
+                                </div>
+                                <h4 class="font-bold text-sm mt-1 text-slate-800">${p.name}</h4>
+                                <div class="text-primary font-extrabold text-sm mt-1">${p.price} ج.م <span class="text-xs text-slate-400 font-normal">/ ${unitText}</span></div>
+                            </div>
+                        </div>
+                        <div class="p-3 pt-0 space-y-2">
+                            <div class="flex items-center justify-between text-xs bg-slate-50 p-1.5 rounded-xl border border-slate-200">
+                                <span class="text-slate-600 font-semibold pr-1">الكمية (${unitText}):</span>
+                                <input type="number" id="weight-${p.id}" step="${stepVal}" min="${stepVal}" value="${defaultVal}" class="w-20 bg-white border border-slate-300 rounded-lg px-2 py-1 text-center font-bold text-primary focus:outline-none">
+                            </div>
+                            <button onclick="addToCart(${p.id})" class="w-full bg-primary/10 hover:bg-primary text-primary hover:text-white font-bold py-2 rounded-xl text-xs transition flex items-center justify-center gap-1">
+                                <i class="fa-solid fa-plus"></i> أضف للسلة
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function setCategory(cat) {
+            currentCategory = cat;
+            document.querySelectorAll('.cat-btn').forEach(btn => {
+                btn.classList.remove('bg-primary', 'text-white');
+                btn.classList.add('bg-white', 'text-slate-600');
+            });
+            event.target.classList.remove('bg-white', 'text-slate-600');
+            event.target.classList.add('bg-primary', 'text-white');
+            renderProducts();
+        }
+
+        function filterProducts() { renderProducts(); }
+
+        function toggleCartModal() {
+            document.getElementById('cartModal').classList.toggle('hidden');
+            renderCartItems();
+        }
+
+        function addToCart(id) {
+            const prod = products.find(p => p.id === id);
+            const weightInput = document.getElementById(`weight-${id}`);
+            let chosenQty = parseFloat(weightInput ? weightInput.value : 1);
+            if (isNaN(chosenQty) || chosenQty <= 0) chosenQty = 1;
+
+            const existing = cart.find(item => item.id === id);
+            if (existing) { 
+                existing.weight += chosenQty; 
+            } else { 
+                cart.push({ ...prod, weight: chosenQty }); 
+            }
+            updateCartBadge();
+        }
+
+        function updateCartBadge() {
+            const totalItems = cart.length;
+            document.getElementById('cartBadge').innerText = totalItems;
+        }
+
+        function populateDeliveryZones() {
+            const select = document.getElementById('deliveryZoneSelect');
+            select.innerHTML = '';
+            deliveryZones.forEach((z, index) => {
+                select.innerHTML += `<option value="${index}">${z.name} (التوصيل: ${z.fee} ج.م)</option>`;
+            });
+            updateCartTotal();
+        }
+
+        function renderCartItems() {
+            const container = document.getElementById('cartItemsContainer');
+            container.innerHTML = '';
+            if (cart.length === 0) {
+                container.innerHTML = `<div class="text-center py-8 text-slate-400 text-xs">سلة الطلبات فارغة حالياً</div>`;
+                updateCartTotal();
+                return;
+            }
+            cart.forEach((item, index) => {
+                const unitName = item.unit || 'كيلو';
+                const itemTotal = item.price * item.weight;
+                container.innerHTML += `
+                    <div class="flex flex-col gap-2 bg-white p-3 rounded-xl border border-slate-200 shadow-sm">
+                        <div class="flex justify-between items-center">
+                            <h5 class="font-bold text-xs text-slate-800">${item.name} <span class="text-[10px] text-slate-400 font-normal">(${unitName})</span></h5>
+                            <button onclick="removeFromCart(${index})" class="text-red-500 text-xs hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                        <div class="flex justify-between items-center text-xs">
+                            <span class="text-slate-500">الكمية (${unitName}):</span>
+                            <input type="number" step="${unitName === 'كيلو' ? '0.05' : '1'}" min="0.05" value="${item.weight}" onchange="updateItemWeight(${index}, this.value)" class="w-24 bg-slate-50 border border-slate-200 rounded px-2 py-1 text-center font-bold text-primary focus:outline-none">
+                        </div>
+                        <div class="flex justify-between items-center text-xs font-bold pt-1 border-t border-slate-100">
+                            <span>السعر:</span>
+                            <span class="text-primary">${itemTotal.toFixed(2)} ج.م</span>
+                        </div>
+                    </div>
+                `;
+            });
+            updateCartTotal();
+        }
+
+        function updateItemWeight(index, val) {
+            let w = parseFloat(val);
+            if (isNaN(w) || w <= 0) w = 1;
+            cart[index].weight = w;
+            renderCartItems();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartBadge();
+            renderCartItems();
+        }
+
+        function updateCartTotal() {
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.weight), 0);
+            const zoneIndex = document.getElementById('deliveryZoneSelect').value;
+            const fee = deliveryZones[zoneIndex] ? deliveryZones[zoneIndex].fee : 0;
+            const total = subtotal + (cart.length > 0 ? fee : 0);
+            document.getElementById('cartTotalPrice').innerText = total.toFixed(2) + " ج.م";
+        }
+
+        function checkoutWhatsApp() {
+            if (cart.length === 0) { alert("السلة فارغة يا باشا!"); return; }
+            
+            const name = document.getElementById('clientName').value.trim();
+            const phone = document.getElementById('clientPhone').value.trim();
+            const address = document.getElementById('clientAddress').value.trim();
+            const notes = document.getElementById('clientNotes').value.trim();
+
+            if (!name || !phone || !address) {
+                alert("برجاء إدخال (الاسم، رقم الموبايل، والعنوان بالتفصيل) قبل إتمام الطلب!");
+                return;
+            }
+
+            const zoneIndex = document.getElementById('deliveryZoneSelect').value;
+            const zone = deliveryZones[zoneIndex];
+            const subtotal = cart.reduce((sum, item) => sum + (item.price * item.weight), 0);
+            const total = subtotal + zone.fee;
+            const orderCode = "MAD-" + Math.floor(1000 + Math.random() * 9000);
+            const currentDate = new Date().toLocaleString();
+
+            let msg = `🏢 *${storeConfig.name}* 🏢\n`;
+            msg += `🎉 لقد تم تسجيل أوردر بنجاح 🎉\n`;
+            msg += `━━━━━━━━━━━━━━━━━━\n\n`;
+            msg += `🔑 *كود الأوردر:* ${orderCode}\n`;
+            msg += `👤 *الاسم:* ${name}\n`;
+            msg += `📞 *الموبايل:* ${phone}\n`;
+            msg += `📍 *العنوان:* ${address} (${zone.name} - الشحن: ${zone.fee}ج)\n`;
+            msg += `🛍️ *المنتجات المطلوبة:*\n`;
+            
+            cart.forEach(i => { 
+                const u = i.unit || 'كيلو';
+                msg += `   - ${i.name} (${i.weight} ${u}): ${(i.price * i.weight).toFixed(2)} ج.م\n`; 
+            });
+
+            msg += `💰 *الإجمالي الكلي:* ${total.toFixed(2)} جنيهاً (شامل الشحن)\n`;
+            if(notes) { msg += `📝 *ملاحظة:* ${notes}\n`; }
+
+            // إرسال البيانات لجوجل شيت بطريقة مدعومة بالكامل
+            if (storeConfig.googleSheetUrl && storeConfig.googleSheetUrl.trim() !== '') {
+                fetch(storeConfig.googleSheetUrl, {
+                    method: 'POST',
+                    mode: 'no-cors',
+                    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                    body: JSON.stringify({ 
+                        orderCode: orderCode, name: name, phone: phone, address: address,
+                        zone: zone.name, total: total, notes: notes, orderDetails: msg, date: currentDate 
+                    })
+                }).then(() => {
+                    console.log("تم الإرسال لجوجل شيت بنجاح");
+                }).catch(err => {
+                    console.log('Google sheet error', err);
+                });
+            }
+
+            const url = `https://wa.me/${storeConfig.whatsapp}?text=${encodeURIComponent(msg)}`;
+            window.open(url, '_blank');
+        }
+
+        function openAdminModal() { document.getElementById('adminLoginModal').classList.remove('hidden'); }
+        function closeAdminLogin() { document.getElementById('adminLoginModal').classList.add('hidden'); }
+
+        function verifyAdminPassword() {
+            const pass = document.getElementById('adminPasswordInput').value;
+            if (pass === storeConfig.adminPassword) {
+                closeAdminLogin();
+                document.getElementById('adminPasswordInput').value = '';
+                document.getElementById('adminDashboardModal').classList.remove('hidden');
+                loadAdminSettings();
+            } else { alert("كلمة المرور غير صحيحة يا باشا!"); }
+        }
+
+        function closeAdminDashboard() { document.getElementById('adminDashboardModal').classList.add('hidden'); }
+
+        function loadAdminSettings() {
+            document.getElementById('settingStoreName').value = storeConfig.name;
+            document.getElementById('settingWhatsApp').value = storeConfig.whatsapp;
+            document.getElementById('settingGoogleSheet').value = storeConfig.googleSheetUrl || '';
+            document.getElementById('settingColor').value = storeConfig.primaryColor;
+            tempLogoBase64 = storeConfig.logoUrl || '';
+            
+            const pList = document.getElementById('adminProductsList');
+            pList.innerHTML = '';
+            products.forEach((p, index) => {
+                pList.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-2 rounded-lg border text-xs">
+                        <span class="font-bold">${p.name} - ${p.price} ج.م / ${p.unit || 'كيلو'}</span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="editProduct(${index})" class="text-blue-500 hover:text-blue-700 font-bold" title="تعديل"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteProduct(${index})" class="text-red-500 hover:text-red-700 font-bold" title="حذف"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+
+            const zList = document.getElementById('adminZonesList');
+            zList.innerHTML = '';
+            deliveryZones.forEach((z, index) => {
+                zList.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-2 rounded-lg border text-xs">
+                        <span class="font-bold">${z.name} - ${z.fee} ج.م</span>
+                        <div class="flex items-center gap-2">
+                            <button onclick="editZone(${index})" class="text-blue-500 hover:text-blue-700 font-bold" title="تعديل"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteZone(${index})" class="text-red-500 hover:text-red-700 font-bold" title="حذف"><i class="fa-solid fa-trash"></i></button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function saveGeneralSettings() {
+            storeConfig.name = document.getElementById('settingStoreName').value;
+            storeConfig.whatsapp = document.getElementById('settingWhatsApp').value;
+            storeConfig.googleSheetUrl = document.getElementById('settingGoogleSheet').value;
+            storeConfig.primaryColor = document.getElementById('settingColor').value;
+            storeConfig.logoUrl = tempLogoBase64;
+            const newPass = document.getElementById('settingPassword').value;
+            if (newPass.trim() !== '') { storeConfig.adminPassword = newPass; }
+            
+            localStorage.setItem('madbouly_config', JSON.stringify(storeConfig));
+            applyStoreConfig();
+            alert("تم حفظ الإعدادات بنجاح يا باشا!");
+        }
+
+        function addNewZone() {
+            const name = document.getElementById('newZoneName').value;
+            const fee = parseFloat(document.getElementById('newZoneFee').value);
+            if (!name || isNaN(fee)) { alert("برجاء إدخال اسم المنطقة وتكلفة الشحن!"); return; }
+            deliveryZones.push({ name, fee });
+            localStorage.setItem('madbouly_zones', JSON.stringify(deliveryZones));
+            document.getElementById('newZoneName').value = '';
+            document.getElementById('newZoneFee').value = '';
+            populateDeliveryZones();
+            loadAdminSettings();
+            alert("تم إضافة منطقة الشحن بنجاح!");
+        }
+
+        function editZone(index) {
+            const z = deliveryZones[index];
+            const newName = prompt("تعديل اسم المنطقة:", z.name);
+            if (newName === null) return;
+            const newFee = prompt("تعديل تكلفة الشحن (ج.م):", z.fee);
+            if (newFee === null) return;
+
+            if (newName.trim() !== "" && !isNaN(parseFloat(newFee))) {
+                deliveryZones[index] = { name: newName.trim(), fee: parseFloat(newFee) };
+                localStorage.setItem('madbouly_zones', JSON.stringify(deliveryZones));
+                populateDeliveryZones();
+                loadAdminSettings();
+                alert("تم تحديث منطقة الشحن بنجاح!");
+            } else {
+                alert("برجاء إدخال بيانات صحيحة!");
+            }
+        }
+
+        function deleteZone(index) {
+            deliveryZones.splice(index, 1);
+            localStorage.setItem('madbouly_zones', JSON.stringify(deliveryZones));
+            populateDeliveryZones();
+            loadAdminSettings();
+        }
+
+        function addNewProduct() {
+            const name = document.getElementById('newProdName').value;
+            const price = parseFloat(document.getElementById('newProdPrice').value);
+            const category = document.getElementById('newProdCategory').value;
+            const unit = document.getElementById('newProdUnit').value;
+            const fileInput = document.getElementById('newProdImageFile');
+
+            if (!name || isNaN(price)) { alert("برجاء إدخال اسم المنتج والسعر!"); return; }
+
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    products.push({ id: Date.now(), name, price, unit, category, image: e.target.result });
+                    localStorage.setItem('madbouly_products', JSON.stringify(products));
+                    resetProductForm();
+                };
+                reader.readAsDataURL(fileInput.files[0]);
+            } else {
+                products.push({ id: Date.now(), name, price, unit, category, image: "https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=300" });
+                localStorage.setItem('madbouly_products', JSON.stringify(products));
+                resetProductForm();
+            }
+        }
+
+        function editProduct(index) {
+            const p = products[index];
+            const newName = prompt("تعديل اسم المنتج:", p.name);
+            if (newName === null) return;
+            const newPrice = prompt("تعديل السعر (ج.م):", p.price);
+            if (newPrice === null) return;
+            const newUnit = prompt("تعديل وحدة البيع (كيلو / حزمة / قطعة):", p.unit || "كيلو");
+            if (newUnit === null) return;
+
+            if (newName.trim() !== "" && !isNaN(parseFloat(newPrice))) {
+                products[index].name = newName.trim();
+                products[index].price = parseFloat(newPrice);
+                products[index].unit = newUnit.trim();
+                localStorage.setItem('madbouly_products', JSON.stringify(products));
+                renderProducts();
+                loadAdminSettings();
+                alert("تم تحديث المنتج بنجاح!");
+            } else {
+                alert("برجاء إدخال بيانات صحيحة!");
+            }
+        }
+
+        function resetProductForm() {
+            document.getElementById('newProdName').value = ``;
+            document.getElementById('newProdPrice').value = ``;
+            document.getElementById('newProdImageFile').value = ``;
+            renderProducts();
+            loadAdminSettings();
+            alert("تم إضافة المنتج بنجاح!");
+        }
+
+        function deleteProduct(index) {
+            products.splice(index, 1);
+            localStorage.setItem('madbouly_products', JSON.stringify(products));
+            renderProducts();
+            loadAdminSettings();
+        }
+    </script>
+</body>
+</html>
