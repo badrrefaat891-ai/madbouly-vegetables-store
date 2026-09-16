@@ -217,7 +217,6 @@
             googleSheetUrl: "https://script.google.com/macros/s/AKfycbzO_nNO_EzwrHRUGJZeo9SdyTtj-fw4GBpfwojXcbNpf4GTq5VjBKlBl3fOfZVNaLhn/exec"
         };
 
-        // تحديث الرابط في حال كان مخزناً مسبقاً بقيمة قديمة في المتصفح
         if (!storeConfig.googleSheetUrl || storeConfig.googleSheetUrl.includes("YOUR_SCRIPT_ID")) {
             storeConfig.googleSheetUrl = "https://script.google.com/macros/s/AKfycbzO_nNO_EzwrHRUGJZeo9SdyTtj-fw4GBpfwojXcbNpf4GTq5VjBKlBl3fOfZVNaLhn/exec";
             localStorage.setItem('madbouly_config', JSON.stringify(storeConfig));
@@ -382,7 +381,7 @@
                 cart.push({ ...prod, weight: chosenQty }); 
             }
             updateCartBadge();
-            alert("تمت الإضافة للسلة بنجاح!");
+            // تم إزالة رسالة الـ alert لسرعة وسلاسة عملية الشراء بناءً على طلبك
         }
 
         function updateCartBadge() {
@@ -543,11 +542,11 @@
 
             localStorage.setItem('madbouly_config', JSON.stringify(storeConfig));
             applyStoreConfig();
-            alert("تم حفظ الإعدادات بنجاح!");
             
-            if (storeConfig.googleSheetUrl) {
-                syncWithCloud("config");
-            }
+            // مزامنة شاملة لكافة الإعدادات والمنتجات والمناطق على جوجل شيت لتظهر في كل الأجهزة
+            syncWithCloud("all");
+
+            alert("تم حفظ وتحديث الإعدادات بنجاح على جميع الأجهزة!");
         }
 
         function renderAdminProductsList() {
@@ -595,7 +594,7 @@
                 document.getElementById('newProdImageFile').value = '';
                 alert("تمت إضافة المنتج بنجاح!");
 
-                if (storeConfig.googleSheetUrl) syncWithCloud("products");
+                syncWithCloud("all");
             };
 
             if (imageFile) {
@@ -612,7 +611,7 @@
             localStorage.setItem('madbouly_products', JSON.stringify(products));
             renderAdminProductsList();
             renderProducts();
-            if (storeConfig.googleSheetUrl) syncWithCloud("products");
+            syncWithCloud("all");
         }
 
         function renderAdminZonesList() {
@@ -646,7 +645,7 @@
             document.getElementById('newZoneFee').value = '';
             alert("تمت إضافة منطقة الشحن بنجاح!");
 
-            if (storeConfig.googleSheetUrl) syncWithCloud("zones");
+            syncWithCloud("all");
         }
 
         function deleteZone(index) {
@@ -654,7 +653,7 @@
             localStorage.setItem('madbouly_zones', JSON.stringify(deliveryZones));
             renderAdminZonesList();
             populateDeliveryZones();
-            if (storeConfig.googleSheetUrl) syncWithCloud("zones");
+            syncWithCloud("all");
         }
 
         function syncWithCloud(updateType) {
