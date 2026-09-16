@@ -164,10 +164,6 @@
                         <label class="text-xs font-semibold text-slate-600">لون الهوية البصرية:</label>
                         <input type="color" id="settingColor" class="w-full h-10 bg-white border border-slate-200 rounded-lg p-1 mt-1 cursor-pointer">
                     </div>
-                    <div>
-                        <label class="text-xs font-semibold text-slate-600">تغيير كلمة المرور الإدارية:</label>
-                        <input type="password" id="settingPassword" placeholder="اتركه فارغاً لعدم التغيير" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm mt-1">
-                    </div>
                 </div>
 
                 <!-- إدارة مناطق الشحن -->
@@ -184,7 +180,7 @@
 
                 <!-- إضافة وتعديل منتج -->
                 <div class="space-y-3 bg-slate-50 p-4 rounded-xl border border-slate-100">
-                    <h4 class="font-bold text-sm text-primary">إدارة وإضافة المنتجات</h4>
+                    <h4 class="font-bold text-sm text-primary">إدارة وتعديل المنتجات</h4>
                     <input type="hidden" id="editingProductIndex" value="-1">
                     <div class="grid grid-cols-2 gap-2">
                         <input type="text" id="newProdName" placeholder="اسم المنتج" class="bg-white border border-slate-200 rounded-lg p-2 text-sm">
@@ -211,7 +207,7 @@
                     <button onclick="saveAndSyncEverything()" class="w-full bg-green-600 hover:bg-green-700 text-white font-extrabold py-4 rounded-2xl shadow-xl text-base flex items-center justify-center gap-2 transition transform active:scale-95">
                         <i class="fa-solid fa-cloud-arrow-up text-xl"></i> حفظ وتحديث كل التغييرات في النظام والشيت
                     </button>
-                    <p class="text-[11px] text-center text-slate-400 mt-2">اضغط هنا بعد الانتهاء من كل التعديلات ليتم حفظها فوراً على كل الأجهزة وجوجل شيت.</p>
+                    <p class="text-[11px] text-center text-slate-400 mt-2">اضغط هنا بعد الانتهاء من كافة التعديلات والإضافات ليتم اعتمادها فوراً.</p>
                 </div>
             </div>
         </div>
@@ -222,10 +218,11 @@
             name: "متجر مدبولي للخضار والفاكهة",
             whatsapp: "201000000000",
             primaryColor: "#16a34a",
-            adminPassword: "444888",
             logoUrl: "",
             googleSheetUrl: "https://script.google.com/macros/s/AKfycbzO_nNO_EzwrHRUGJZeo9SdyTtj-fw4GBpfwojXcbNpf4GTq5VjBKlBl3fOfZVNaLhn/exec"
         };
+
+        const FIXED_ADMIN_PASSWORD = "444888";
 
         let deliveryZones = JSON.parse(localStorage.getItem('madbouly_zones')) || [
             { name: "الدقي والعجوزة", fee: 20 },
@@ -509,18 +506,16 @@
         function openAdminModal() { document.getElementById('adminLoginModal').classList.remove('hidden'); }
         function closeAdminLogin() { document.getElementById('adminLoginModal').classList.add('hidden'); }
 
-        // التحقق الصحيح والآمن من كلمة المرور
         function verifyAdminPassword() {
             const enteredPass = document.getElementById('adminPasswordInput').value;
-            const currentAdminPass = storeConfig.adminPassword || "444888";
 
-            if (enteredPass === currentAdminPass) {
+            if (enteredPass === FIXED_ADMIN_PASSWORD) {
                 closeAdminLogin();
                 document.getElementById('adminPasswordInput').value = '';
                 document.getElementById('adminDashboardModal').classList.remove('hidden');
                 loadAdminSettings();
             } else {
-                alert("❌ كلمة المرور غير صحيحة! يرجى إدخال كلمة المرور الصحيحة.");
+                alert("❌ كلمة المرور غير صحيحة!");
             }
         }
 
@@ -531,14 +526,13 @@
             document.getElementById('settingWhatsApp').value = storeConfig.whatsapp;
             document.getElementById('settingGoogleSheet').value = storeConfig.googleSheetUrl || '';
             document.getElementById('settingColor').value = storeConfig.primaryColor;
-            document.getElementById('settingPassword').value = ''; // اتركه فارغاً حتى لا يتم تغيير الباسورد بالخطأ
             tempLogoBase64 = storeConfig.logoUrl || '';
             
             renderAdminProductsList();
             renderAdminZonesList();
         }
 
-        // --- إدارة المنتجات (إضافة / تعديل بالقلم / حذف) ---
+        // --- إدارة المنتجات (عرض، تعديل بالقلم، وحذف) ---
         function renderAdminProductsList() {
             const list = document.getElementById('adminProductsList');
             if(!list) return;
@@ -548,8 +542,8 @@
                     <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-200 text-xs">
                         <span><b>${p.name}</b> - ${p.price} ج.م (${p.unit || 'كيلو'})</span>
                         <div class="flex gap-2">
-                            <button onclick="editProduct(${idx})" class="text-blue-500 hover:text-blue-700" title="تعديل"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deleteProduct(${idx})" class="text-red-500 hover:text-red-700" title="حذف"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="editProduct(${idx})" class="text-blue-500 hover:text-blue-700 p-1" title="تعديل"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteProduct(${idx})" class="text-red-500 hover:text-red-700 p-1" title="حذف"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                 `;
@@ -563,9 +557,14 @@
             document.getElementById('newProdCategory').value = p.category;
             document.getElementById('newProdUnit').value = p.unit || 'كيلو';
             document.getElementById('editingProductIndex').value = index;
-            document.getElementById('productActionBtn').innerText = "تحديث المنتج في القائمة";
-            document.getElementById('productActionBtn').classList.remove('bg-secondary');
-            document.getElementById('productActionBtn').classList.add('bg-blue-600');
+            
+            const btn = document.getElementById('productActionBtn');
+            btn.innerText = "تحديث المنتج في القائمة";
+            btn.classList.remove('bg-secondary');
+            btn.classList.add('bg-blue-600');
+            
+            // التمرير البسيط لخانة الإضافة لرؤية البيانات المعروضة للتعديل
+            btn.scrollIntoView({ behavior: 'smooth' });
         }
 
         function saveProductItem() {
@@ -583,17 +582,25 @@
 
             const finalizeProd = (imgUrl) => {
                 if (editingIdx > -1) {
+                    // تحديث المنتج الحالي
                     products[editingIdx].name = name;
                     products[editingIdx].price = price;
                     products[editingIdx].category = category;
                     products[editingIdx].unit = unit;
-                    if (imgUrl) products[editingIdx].image = imgUrl;
+                    if (imgUrl) {
+                        products[editingIdx].image = imgUrl;
+                    }
 
+                    // إعادة ضبط الزر والوضع الافتراضي
                     document.getElementById('editingProductIndex').value = -1;
-                    document.getElementById('productActionBtn').innerText = "إضافة المنتج للقائمة";
-                    document.getElementById('productActionBtn').classList.remove('bg-blue-600');
-                    document.getElementById('productActionBtn').classList.add('bg-secondary');
+                    const btn = document.getElementById('productActionBtn');
+                    btn.innerText = "إضافة المنتج للقائمة";
+                    btn.classList.remove('bg-blue-600');
+                    btn.classList.add('bg-secondary');
+                    
+                    alert("✅ تم تعديل وتحديث المنتج بنجاح في القائمة المحلية! لا تنس الضغط على زر (حفظ وتحديث كل التغييرات) في الأسفل.");
                 } else {
+                    // إضافة منتج جديد
                     const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
                     products.push({
                         id: newId,
@@ -603,15 +610,16 @@
                         unit: unit,
                         image: imgUrl || "https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=300"
                     });
+                    alert("✅ تمت إضافة المنتج بنجاح للقائمة!");
                 }
 
                 renderAdminProductsList();
                 renderProducts();
                 
+                // تفريغ الحقول
                 document.getElementById('newProdName').value = '';
                 document.getElementById('newProdPrice').value = '';
                 document.getElementById('newProdImageFile').value = '';
-                alert("تم تحديث قائمة المنتجات محلياً! لا تنس الضغط على زر (حفظ وتحديث كل التغييرات) في الأسفل.");
             };
 
             if (imageFile) {
@@ -625,12 +633,14 @@
         }
 
         function deleteProduct(index) {
-            products.splice(index, 1);
-            renderAdminProductsList();
-            renderProducts();
+            if(confirm("هل أنت متأكد من حذف هذا المنتج؟")) {
+                products.splice(index, 1);
+                renderAdminProductsList();
+                renderProducts();
+            }
         }
 
-        // --- إدارة مناطق الشحن (إضافة / تعديل بالقلم / حذف) ---
+        // --- إدارة مناطق الشحن (تعديل بالقلم / حذف) ---
         function renderAdminZonesList() {
             const list = document.getElementById('adminZonesList');
             if(!list) return;
@@ -640,8 +650,8 @@
                     <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-200 text-xs">
                         <span><b>${z.name}</b> - الشحن: ${z.fee} ج.م</span>
                         <div class="flex gap-2">
-                            <button onclick="editZone(${idx})" class="text-blue-500 hover:text-blue-700" title="تعديل"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deleteZone(${idx})" class="text-red-500 hover:text-red-700" title="حذف"><i class="fa-solid fa-trash"></i></button>
+                            <button onclick="editZone(${idx})" class="text-blue-500 hover:text-blue-700 p-1" title="تعديل"><i class="fa-solid fa-pen"></i></button>
+                            <button onclick="deleteZone(${idx})" class="text-red-500 hover:text-red-700 p-1" title="حذف"><i class="fa-solid fa-trash"></i></button>
                         </div>
                     </div>
                 `;
@@ -653,9 +663,11 @@
             document.getElementById('newZoneName').value = z.name;
             document.getElementById('newZoneFee').value = z.fee;
             document.getElementById('editingZoneIndex').value = index;
-            document.getElementById('zoneActionBtn').innerText = "تحديث منطقة الشحن";
-            document.getElementById('zoneActionBtn').classList.remove('bg-secondary');
-            document.getElementById('zoneActionBtn').classList.add('bg-blue-600');
+            
+            const btn = document.getElementById('zoneActionBtn');
+            btn.innerText = "تحديث منطقة الشحن";
+            btn.classList.remove('bg-secondary');
+            btn.classList.add('bg-blue-600');
         }
 
         function saveZoneItem() {
@@ -672,11 +684,16 @@
                 deliveryZones[editingIdx].name = name;
                 deliveryZones[editingIdx].fee = fee;
                 document.getElementById('editingZoneIndex').value = -1;
-                document.getElementById('zoneActionBtn').innerText = "إضافة منطقة الشحن";
-                document.getElementById('zoneActionBtn').classList.remove('bg-blue-600');
-                document.getElementById('zoneActionBtn').classList.add('bg-secondary');
+                
+                const btn = document.getElementById('zoneActionBtn');
+                btn.innerText = "إضافة منطقة الشحن";
+                btn.classList.remove('bg-blue-600');
+                btn.classList.add('bg-secondary');
+                
+                alert("✅ تم تحديث منطقة الشحن محلياً!");
             } else {
                 deliveryZones.push({ name: name, fee: fee });
+                alert("✅ تمت إضافة منطقة الشحن بنجاح!");
             }
 
             renderAdminZonesList();
@@ -684,7 +701,6 @@
 
             document.getElementById('newZoneName').value = '';
             document.getElementById('newZoneFee').value = '';
-            alert("تم تحديث مناطق الشحن محلياً! لا تنس الضغط على زر (حفظ وتحديث كل التغييرات) في الأسفل.");
         }
 
         function deleteZone(index) {
@@ -700,12 +716,6 @@
             storeConfig.googleSheetUrl = document.getElementById('settingGoogleSheet').value;
             storeConfig.primaryColor = document.getElementById('settingColor').value;
             storeConfig.logoUrl = tempLogoBase64;
-            
-            // تحديث كلمة المرور إذا كتب البائع كلمة جديدة
-            const newPass = document.getElementById('settingPassword').value;
-            if (newPass && newPass.trim() !== '') {
-                storeConfig.adminPassword = newPass.trim();
-            }
 
             localStorage.setItem('madbouly_config', JSON.stringify(storeConfig));
             localStorage.setItem('madbouly_products', JSON.stringify(products));
@@ -727,7 +737,7 @@
                         zones: deliveryZones
                     })
                 }).then(() => {
-                    alert("✅ تم حفظ وتحديث كافة بيانات المتجر وكلمة المرور وجوجل شيت بنجاح على جميع الأجهزة!");
+                    alert("✅ تم حفظ وتحديث كافة بيانات المتجر والمنتجات والأسعار على جوجل شيت وجميع الأجهزة بنجاح!");
                     closeAdminDashboard();
                 }).catch(err => {
                     alert("تم الحفظ محلياً، ولكن حدث خطأ أثناء المزامنة مع الشيت!");
