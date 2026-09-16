@@ -509,14 +509,19 @@
         function openAdminModal() { document.getElementById('adminLoginModal').classList.remove('hidden'); }
         function closeAdminLogin() { document.getElementById('adminLoginModal').classList.add('hidden'); }
 
+        // التحقق الصحيح والآمن من كلمة المرور
         function verifyAdminPassword() {
-            const pass = document.getElementById('adminPasswordInput').value;
-            if (pass === storeConfig.adminPassword) {
+            const enteredPass = document.getElementById('adminPasswordInput').value;
+            const currentAdminPass = storeConfig.adminPassword || "444888";
+
+            if (enteredPass === currentAdminPass) {
                 closeAdminLogin();
                 document.getElementById('adminPasswordInput').value = '';
                 document.getElementById('adminDashboardModal').classList.remove('hidden');
                 loadAdminSettings();
-            } else { alert("كلمة المرور غير صحيحة!"); }
+            } else {
+                alert("❌ كلمة المرور غير صحيحة! يرجى إدخال كلمة المرور الصحيحة.");
+            }
         }
 
         function closeAdminDashboard() { document.getElementById('adminDashboardModal').classList.add('hidden'); }
@@ -526,6 +531,7 @@
             document.getElementById('settingWhatsApp').value = storeConfig.whatsapp;
             document.getElementById('settingGoogleSheet').value = storeConfig.googleSheetUrl || '';
             document.getElementById('settingColor').value = storeConfig.primaryColor;
+            document.getElementById('settingPassword').value = ''; // اتركه فارغاً حتى لا يتم تغيير الباسورد بالخطأ
             tempLogoBase64 = storeConfig.logoUrl || '';
             
             renderAdminProductsList();
@@ -577,7 +583,6 @@
 
             const finalizeProd = (imgUrl) => {
                 if (editingIdx > -1) {
-                    // تحديث منتج موجود
                     products[editingIdx].name = name;
                     products[editingIdx].price = price;
                     products[editingIdx].category = category;
@@ -589,7 +594,6 @@
                     document.getElementById('productActionBtn').classList.remove('bg-blue-600');
                     document.getElementById('productActionBtn').classList.add('bg-secondary');
                 } else {
-                    // إضافة منتج جديد
                     const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
                     products.push({
                         id: newId,
@@ -691,29 +695,26 @@
 
         // --- زر الحفظ والتحديث الشامل النهائي ---
         function saveAndSyncEverything() {
-            // سحب البيانات العامة وتحديثها
             storeConfig.name = document.getElementById('settingStoreName').value;
             storeConfig.whatsapp = document.getElementById('settingWhatsApp').value;
             storeConfig.googleSheetUrl = document.getElementById('settingGoogleSheet').value;
             storeConfig.primaryColor = document.getElementById('settingColor').value;
             storeConfig.logoUrl = tempLogoBase64;
             
+            // تحديث كلمة المرور إذا كتب البائع كلمة جديدة
             const newPass = document.getElementById('settingPassword').value;
             if (newPass && newPass.trim() !== '') {
-                storeConfig.adminPassword = newPass;
+                storeConfig.adminPassword = newPass.trim();
             }
 
-            // حفظ محلي في المتصفح
             localStorage.setItem('madbouly_config', JSON.stringify(storeConfig));
             localStorage.setItem('madbouly_products', JSON.stringify(products));
             localStorage.setItem('madbouly_zones', JSON.stringify(deliveryZones));
 
-            // تطبيق الواجهة فوراً
             applyStoreConfig();
             renderProducts();
             populateDeliveryZones();
 
-            // إرسال البيانات لجوجل شيت (المزامنة السحابية)
             if (storeConfig.googleSheetUrl) {
                 fetch(storeConfig.googleSheetUrl, {
                     method: 'POST',
@@ -726,7 +727,7 @@
                         zones: deliveryZones
                     })
                 }).then(() => {
-                    alert("✅ تم حفظ وتحديث كافة بيانات المتجر والمنتجات ومناطق الشحن بنجاح على النظام وجوجل شيت وجميع الأجهزة!");
+                    alert("✅ تم حفظ وتحديث كافة بيانات المتجر وكلمة المرور وجوجل شيت بنجاح على جميع الأجهزة!");
                     closeAdminDashboard();
                 }).catch(err => {
                     alert("تم الحفظ محلياً، ولكن حدث خطأ أثناء المزامنة مع الشيت!");
