@@ -157,7 +157,7 @@
                     </div>
                     <div>
                         <label class="text-xs font-semibold text-slate-600">رابط جوجل شيت (Google Sheet Web App URL):</label>
-                        <input type="text" id="settingGoogleSheet" placeholder="https://script.google.com/macros/s/.../exec" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm mt-1">
+                        <input type="text" id="settingGoogleSheet" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm mt-1">
                     </div>
                     <div>
                         <label class="text-xs font-semibold text-slate-600">لون الهوية البصرية:</label>
@@ -167,7 +167,7 @@
                         <label class="text-xs font-semibold text-slate-600">تغيير كلمة المرور الإدارية:</label>
                         <input type="password" id="settingPassword" placeholder="اتركه فارغاً لعدم التغيير" class="w-full bg-white border border-slate-200 rounded-lg p-2.5 text-sm mt-1">
                     </div>
-                    <button onclick="saveGeneralSettings()" class="bg-primary text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition">حفظ الإعدادات وإرسالها للسيرفر</button>
+                    <button onclick="saveGeneralSettings()" class="bg-primary text-white text-sm font-bold px-4 py-2 rounded-lg shadow transition">حفظ الإعدادات</button>
                 </div>
 
                 <!-- إدارة مناطق الشحن -->
@@ -208,15 +208,20 @@
     </div>
 
     <script>
-        // إعدادات افتراضية رئيسية
         let storeConfig = JSON.parse(localStorage.getItem('madbouly_config')) || {
             name: "متجر مدبولي للخضار والفاكهة",
             whatsapp: "201000000000",
             primaryColor: "#16a34a",
             adminPassword: "444888",
             logoUrl: "",
-            googleSheetUrl: localStorage.getItem('madbouly_sheet_url') || ""
+            googleSheetUrl: "https://script.google.com/macros/s/AKfycbzO_nNO_EzwrHRUGJZeo9SdyTtj-fw4GBpfwojXcbNpf4GTq5VjBKlBl3fOfZVNaLhn/exec"
         };
+
+        // تحديث الرابط في حال كان مخزناً مسبقاً بقيمة قديمة في المتصفح
+        if (!storeConfig.googleSheetUrl || storeConfig.googleSheetUrl.includes("YOUR_SCRIPT_ID")) {
+            storeConfig.googleSheetUrl = "https://script.google.com/macros/s/AKfycbzO_nNO_EzwrHRUGJZeo9SdyTtj-fw4GBpfwojXcbNpf4GTq5VjBKlBl3fOfZVNaLhn/exec";
+            localStorage.setItem('madbouly_config', JSON.stringify(storeConfig));
+        }
 
         let deliveryZones = JSON.parse(localStorage.getItem('madbouly_zones')) || [
             { name: "الدقي والعجوزة", fee: 20 },
@@ -236,7 +241,6 @@
         let tempLogoBase64 = storeConfig.logoUrl || "";
 
         document.addEventListener('DOMContentLoaded', () => {
-            // محاولة جلب البيانات الحديثة من جوجل شيت إذا كان الرابط موجوداً
             if (storeConfig.googleSheetUrl) {
                 fetchStoreDataFromCloud();
             } else {
@@ -247,7 +251,6 @@
             }
         });
 
-        // دالة لجلب البيانات المركزية من جوجل شيت
         function fetchStoreDataFromCloud() {
             const url = storeConfig.googleSheetUrl + "?action=getData";
             fetch(url)
@@ -258,13 +261,12 @@
                         if (data.products && data.products.length > 0) products = data.products;
                         if (data.zones && data.zones.length > 0) deliveryZones = data.zones;
                         
-                        // تحديث الذاكرة المحلية المحلية للزوار
                         localStorage.setItem('madbouly_config', JSON.stringify(storeConfig));
                         localStorage.setItem('madbouly_products', JSON.stringify(products));
                         localStorage.setItem('madbouly_zones', JSON.stringify(deliveryZones));
                     }
                 })
-                .catch(err => console.log("تعذر جلب التحديثات السحابية، استخدام التخزين المحلي", err))
+                .catch(err => console.log("تعذر جلب التحديثات السحابية", err))
                 .finally(() => {
                     document.getElementById('loadingIndicator').style.display = 'none';
                     applyStoreConfig();
@@ -380,6 +382,7 @@
                 cart.push({ ...prod, weight: chosenQty }); 
             }
             updateCartBadge();
+            alert("تمت الإضافة للسلة بنجاح!");
         }
 
         function updateCartBadge() {
@@ -465,7 +468,6 @@
             const subtotal = cart.reduce((sum, item) => sum + (item.price * item.weight), 0);
             const total = subtotal + zone.fee;
             const orderCode = "MAD-" + Math.floor(1000 + Math.random() * 9000);
-            const currentDate = new Date().toLocaleString();
 
             let msg = `🏢 *${storeConfig.name}* 🏢\n`;
             msg += `🎉 لقد تم تسجيل أوردر بنجاح 🎉\n`;
@@ -484,7 +486,6 @@
             msg += `💰 *الإجمالي الكلي:* ${total.toFixed(2)} جنيهاً (شامل الشحن)\n`;
             if(notes) { msg += `📝 *ملاحظة:* ${notes}\n`; }
 
-            // إرسال الطلب لجوجل شيت
             if (storeConfig.googleSheetUrl && storeConfig.googleSheetUrl.trim() !== '') {
                 fetch(storeConfig.googleSheetUrl, {
                     method: 'POST',
@@ -493,7 +494,7 @@
                     body: JSON.stringify({ 
                         type: "order",
                         orderCode: orderCode, name: name, phone: phone, address: address,
-                        zone: zone.name, total: total, notes: notes, orderDetails: msg, date: currentDate 
+                        zone: zone.name, total: total, notes: notes, orderDetails: msg 
                     })
                 }).catch(err => console.log('Google sheet error', err));
             }
@@ -512,7 +513,7 @@
                 document.getElementById('adminPasswordInput').value = '';
                 document.getElementById('adminDashboardModal').classList.remove('hidden');
                 loadAdminSettings();
-            } else { alert("كلمة المرور غير صحيحة يا باشا!"); }
+            } else { alert("كلمة المرور غير صحيحة!"); }
         }
 
         function closeAdminDashboard() { document.getElementById('adminDashboardModal').classList.add('hidden'); }
@@ -524,33 +525,8 @@
             document.getElementById('settingColor').value = storeConfig.primaryColor;
             tempLogoBase64 = storeConfig.logoUrl || '';
             
-            const pList = document.getElementById('adminProductsList');
-            pList.innerHTML = '';
-            products.forEach((p, index) => {
-                pList.innerHTML += `
-                    <div class="flex justify-between items-center bg-white p-2 rounded-lg border text-xs">
-                        <span class="font-bold">${p.name} - ${p.price} ج.م / ${p.unit || 'كيلو'}</span>
-                        <div class="flex items-center gap-2">
-                            <button onclick="editProduct(${index})" class="text-blue-500 hover:text-blue-700 font-bold" title="تعديل"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deleteProduct(${index})" class="text-red-500 hover:text-red-700 font-bold" title="حذف"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </div>
-                `;
-            });
-
-            const zList = document.getElementById('adminZonesList');
-            zList.innerHTML = '';
-            deliveryZones.forEach((z, index) => {
-                zList.innerHTML += `
-                    <div class="flex justify-between items-center bg-white p-2 rounded-lg border text-xs">
-                        <span class="font-bold">${z.name} - ${z.fee} ج.م</span>
-                        <div class="flex items-center gap-2">
-                            <button onclick="editZone(${index})" class="text-blue-500 hover:text-blue-700 font-bold" title="تعديل"><i class="fa-solid fa-pen"></i></button>
-                            <button onclick="deleteZone(${index})" class="text-red-500 hover:text-red-700 font-bold" title="حذف"><i class="fa-solid fa-trash"></i></button>
-                        </div>
-                    </div>
-                `;
-            });
+            renderAdminProductsList();
+            renderAdminZonesList();
         }
 
         function saveGeneralSettings() {
@@ -559,51 +535,32 @@
             storeConfig.googleSheetUrl = document.getElementById('settingGoogleSheet').value;
             storeConfig.primaryColor = document.getElementById('settingColor').value;
             storeConfig.logoUrl = tempLogoBase64;
-
-            const newPass = document.getElementById('settingPassword').value.trim();
-            if (newPass !== '') storeConfig.adminPassword = newPass;
+            
+            const newPass = document.getElementById('settingPassword').value;
+            if (newPass && newPass.trim() !== '') {
+                storeConfig.adminPassword = newPass;
+            }
 
             localStorage.setItem('madbouly_config', JSON.stringify(storeConfig));
-            localStorage.setItem('madbouly_sheet_url', storeConfig.googleSheetUrl);
-
-            // إرسال التحديثات للسيرفر (جوجل شيت)
-            syncDataToCloud();
-        }
-
-        function addNewZone() {
-            const name = document.getElementById('newZoneName').value.trim();
-            const fee = parseFloat(document.getElementById('newZoneFee').value);
-            if (!name || isNaN(fee)) { alert("برجاء إدخال اسم المنطقة وسعر الشحن بشكل صحيح"); return; }
-            deliveryZones.push({ name, fee });
-            localStorage.setItem('madbouly_zones', JSON.stringify(deliveryZones));
-            document.getElementById('newZoneName').value = '';
-            document.getElementById('newZoneFee').value = '';
-            loadAdminSettings();
-            populateDeliveryZones();
-            syncDataToCloud();
-        }
-
-        function deleteZone(index) {
-            deliveryZones.splice(index, 1);
-            localStorage.setItem('madbouly_zones', JSON.stringify(deliveryZones));
-            loadAdminSettings();
-            populateDeliveryZones();
-            syncDataToCloud();
-        }
-
-        function editZone(index) {
-            const z = deliveryZones[index];
-            const newName = prompt("تعديل اسم المنطقة:", z.name);
-            if (newName === null) return;
-            const newFee = prompt("تعديل تكلفة الشحن:", z.fee);
-            if (newFee === null) return;
+            applyStoreConfig();
+            alert("تم حفظ الإعدادات بنجاح!");
             
-            z.name = newName.trim() || z.name;
-            z.fee = parseFloat(newFee) || z.fee;
-            localStorage.setItem('madbouly_zones', JSON.stringify(deliveryZones));
-            loadAdminSettings();
-            populateDeliveryZones();
-            syncDataToCloud();
+            if (storeConfig.googleSheetUrl) {
+                syncWithCloud("config");
+            }
+        }
+
+        function renderAdminProductsList() {
+            const list = document.getElementById('adminProductsList');
+            list.innerHTML = '';
+            products.forEach((p, idx) => {
+                list.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-200 text-xs">
+                        <span><b>${p.name}</b> - ${p.price} ج.م (${p.unit || 'كيلو'})</span>
+                        <button onclick="deleteProduct(${idx})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+            });
         }
 
         function addNewProduct() {
@@ -613,86 +570,107 @@
             const unit = document.getElementById('newProdUnit').value;
             const imageFile = document.getElementById('newProdImageFile').files[0];
 
-            if (!name || isNaN(price)) { alert("برجاء إدخال اسم المنتج والسعر على الأقل!"); return; }
+            if (!name || isNaN(price)) {
+                alert("برجاء إدخال اسم المنتج والسعر بشكل صحيح!");
+                return;
+            }
+
+            const saveProdObj = (imgUrl) => {
+                const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
+                products.push({
+                    id: newId,
+                    name: name,
+                    price: price,
+                    category: category,
+                    unit: unit,
+                    image: imgUrl || "https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=300"
+                });
+
+                localStorage.setItem('madbouly_products', JSON.stringify(products));
+                renderAdminProductsList();
+                renderProducts();
+                
+                document.getElementById('newProdName').value = '';
+                document.getElementById('newProdPrice').value = '';
+                document.getElementById('newProdImageFile').value = '';
+                alert("تمت إضافة المنتج بنجاح!");
+
+                if (storeConfig.googleSheetUrl) syncWithCloud("products");
+            };
 
             if (imageFile) {
                 const reader = new FileReader();
-                reader.onload = function(e) {
-                    addProductToArr(name, price, category, unit, e.target.result);
-                };
+                reader.onload = function(e) { saveProdObj(e.target.result); };
                 reader.readAsDataURL(imageFile);
             } else {
-                addProductToArr(name, price, category, unit, "https://images.unsplash.com/photo-1610348725531-843dff563e2c?w=300");
+                saveProdObj("");
             }
-        }
-
-        function addProductToArr(name, price, category, unit, image) {
-            const newId = products.length > 0 ? products[products.length - 1].id + 1 : 1;
-            products.push({ id: newId, name, price, category, unit, image });
-            localStorage.setItem('madbouly_products', JSON.stringify(products));
-            
-            document.getElementById('newProdName').value = '';
-            document.getElementById('newProdPrice').value = '';
-            document.getElementById('newProdImageFile').value = '';
-            
-            loadAdminSettings();
-            renderProducts();
-            syncDataToCloud();
-            alert("تم إضافة المنتج بنجاح!");
         }
 
         function deleteProduct(index) {
             products.splice(index, 1);
             localStorage.setItem('madbouly_products', JSON.stringify(products));
-            loadAdminSettings();
+            renderAdminProductsList();
             renderProducts();
-            syncDataToCloud();
+            if (storeConfig.googleSheetUrl) syncWithCloud("products");
         }
 
-        function editProduct(index) {
-            const p = products[index];
-            const newName = prompt("تعديل اسم المنتج:", p.name);
-            if (newName === null) return;
-            const newPrice = prompt("تعديل السعر:", p.price);
-            if (newPrice === null) return;
-
-            p.name = newName.trim() || p.name;
-            p.price = parseFloat(newPrice) || p.price;
-            localStorage.setItem('madbouly_products', JSON.stringify(products));
-            loadAdminSettings();
-            renderProducts();
-            syncDataToCloud();
+        function renderAdminZonesList() {
+            const list = document.getElementById('adminZonesList');
+            list.innerHTML = '';
+            deliveryZones.forEach((z, idx) => {
+                list.innerHTML += `
+                    <div class="flex justify-between items-center bg-white p-2 rounded-lg border border-slate-200 text-xs">
+                        <span><b>${z.name}</b> - الشحن: ${z.fee} ج.م</span>
+                        <button onclick="deleteZone(${idx})" class="text-red-500 hover:text-red-700"><i class="fa-solid fa-trash"></i></button>
+                    </div>
+                `;
+            });
         }
 
-        // دالة مزامنة وتحديث البيانات في جوجل شيت ليراها الجميع
-        function syncDataToCloud() {
-            if (!storeConfig.googleSheetUrl) {
-                alert("تم الحفظ محلياً، ولكن يرجى إدخال رابط جوجل شيت ليتم الحفظ للجميع!");
-                closeAdminDashboard();
-                applyStoreConfig();
+        function addNewZone() {
+            const name = document.getElementById('newZoneName').value.trim();
+            const fee = parseFloat(document.getElementById('newZoneFee').value);
+
+            if (!name || isNaN(fee)) {
+                alert("برجاء إدخال اسم المنطقة وتكلفة الشحن!");
                 return;
             }
 
+            deliveryZones.push({ name: name, fee: fee });
+            localStorage.setItem('madbouly_zones', JSON.stringify(deliveryZones));
+            renderAdminZonesList();
+            populateDeliveryZones();
+
+            document.getElementById('newZoneName').value = '';
+            document.getElementById('newZoneFee').value = '';
+            alert("تمت إضافة منطقة الشحن بنجاح!");
+
+            if (storeConfig.googleSheetUrl) syncWithCloud("zones");
+        }
+
+        function deleteZone(index) {
+            deliveryZones.splice(index, 1);
+            localStorage.setItem('madbouly_zones', JSON.stringify(deliveryZones));
+            renderAdminZonesList();
+            populateDeliveryZones();
+            if (storeConfig.googleSheetUrl) syncWithCloud("zones");
+        }
+
+        function syncWithCloud(updateType) {
+            if (!storeConfig.googleSheetUrl) return;
             fetch(storeConfig.googleSheetUrl, {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: { 'Content-Type': 'text/plain;charset=utf-8' },
                 body: JSON.stringify({
-                    type: "saveStoreData",
+                    type: "sync",
+                    updateType: updateType,
                     config: storeConfig,
                     products: products,
                     zones: deliveryZones
                 })
-            }).then(() => {
-                alert("تم حفظ الإعدادات وتحديث السيستم بالكامل للجميع بنجاح!");
-                closeAdminDashboard();
-                applyStoreConfig();
-                renderProducts();
-                populateDeliveryZones();
-            }).catch(err => {
-                alert("حدث خطأ أثناء المزامنة السحابية!");
-                console.log(err);
-            });
+            }).catch(err => console.log("خطأ في المزامنة السحابية", err));
         }
     </script>
 </body>
