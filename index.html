@@ -251,15 +251,25 @@
             }
         });
 
+        // --- تم إصلاح هذه الدالة لضمان جلب وتحديث وعرض المنتجات مباشرة ---
         function fetchStoreDataFromCloud() {
+            const loader = document.getElementById('loadingIndicator');
+            if(loader) loader.style.display = 'block';
+
             const url = storeConfig.googleSheetUrl + "?action=getData&t=" + new Date().getTime();
             fetch(url, { cache: 'no-store' })
                 .then(res => res.json())
                 .then(data => {
                     if (data && data.success) {
-                        if (data.config && data.config.name) storeConfig = { ...storeConfig, ...data.config };
-                        if (data.products && data.products.length > 0) products = data.products;
-                        if (data.zones && data.zones.length > 0) deliveryZones = data.zones;
+                        if (data.config && Object.keys(data.config).length > 0) {
+                            storeConfig = { ...storeConfig, ...data.config };
+                        }
+                        if (data.products && Array.isArray(data.products) && data.products.length > 0) {
+                            products = data.products;
+                        }
+                        if (data.zones && Array.isArray(data.zones) && data.zones.length > 0) {
+                            deliveryZones = data.zones;
+                        }
                         
                         localStorage.setItem('madbouly_config', JSON.stringify(storeConfig));
                         localStorage.setItem('madbouly_products', JSON.stringify(products));
@@ -272,7 +282,6 @@
                 })
                 .catch(err => console.log("تعذر جلب التحديثات السحابية", err))
                 .finally(() => {
-                    const loader = document.getElementById('loadingIndicator');
                     if(loader) loader.style.display = 'none';
                 });
         }
@@ -532,7 +541,6 @@
             renderAdminZonesList();
         }
 
-        // --- إدارة المنتجات (عرض، تعديل بالقلم، وحذف) ---
         function renderAdminProductsList() {
             const list = document.getElementById('adminProductsList');
             if(!list) return;
@@ -563,7 +571,6 @@
             btn.classList.remove('bg-secondary');
             btn.classList.add('bg-blue-600');
             
-            // التمرير البسيط لخانة الإضافة لرؤية البيانات المعروضة للتعديل
             btn.scrollIntoView({ behavior: 'smooth' });
         }
 
@@ -582,7 +589,6 @@
 
             const finalizeProd = (imgUrl) => {
                 if (editingIdx > -1) {
-                    // تحديث المنتج الحالي
                     products[editingIdx].name = name;
                     products[editingIdx].price = price;
                     products[editingIdx].category = category;
@@ -591,16 +597,14 @@
                         products[editingIdx].image = imgUrl;
                     }
 
-                    // إعادة ضبط الزر والوضع الافتراضي
                     document.getElementById('editingProductIndex').value = -1;
                     const btn = document.getElementById('productActionBtn');
                     btn.innerText = "إضافة المنتج للقائمة";
                     btn.classList.remove('bg-blue-600');
                     btn.classList.add('bg-secondary');
                     
-                    alert("✅ تم تعديل وتحديث المنتج بنجاح في القائمة المحلية! لا تنس الضغط على زر (حفظ وتحديث كل التغييرات) في الأسفل.");
+                    alert("✅ تم تعديل وتحديث المنتج بنجاح في القائمة المحلية!");
                 } else {
-                    // إضافة منتج جديد
                     const newId = products.length > 0 ? Math.max(...products.map(p => p.id)) + 1 : 1;
                     products.push({
                         id: newId,
@@ -616,7 +620,6 @@
                 renderAdminProductsList();
                 renderProducts();
                 
-                // تفريغ الحقول
                 document.getElementById('newProdName').value = '';
                 document.getElementById('newProdPrice').value = '';
                 document.getElementById('newProdImageFile').value = '';
@@ -640,7 +643,6 @@
             }
         }
 
-        // --- إدارة مناطق الشحن (تعديل بالقلم / حذف) ---
         function renderAdminZonesList() {
             const list = document.getElementById('adminZonesList');
             if(!list) return;
@@ -709,7 +711,6 @@
             populateDeliveryZones();
         }
 
-        // --- زر الحفظ والتحديث الشامل النهائي ---
         function saveAndSyncEverything() {
             storeConfig.name = document.getElementById('settingStoreName').value;
             storeConfig.whatsapp = document.getElementById('settingWhatsApp').value;
@@ -725,7 +726,10 @@
             renderProducts();
             populateDeliveryZones();
 
-            if (storeConfig.googleSheetUrl) {
+            alert("✅ تم حفظ وتحديث كافة بيانات المتجر والمنتجات محلياً وتحديث العرض بنجاح!");
+            closeAdminDashboard();
+
+            if (storeConfig.googleSheetUrl && storeConfig.googleSheetUrl.trim() !== '') {
                 fetch(storeConfig.googleSheetUrl, {
                     method: 'POST',
                     mode: 'no-cors',
@@ -736,16 +740,9 @@
                         products: products,
                         zones: deliveryZones
                     })
-                }).then(() => {
-                    alert("✅ تم حفظ وتحديث كافة بيانات المتجر والمنتجات والأسعار على جوجل شيت وجميع الأجهزة بنجاح!");
-                    closeAdminDashboard();
                 }).catch(err => {
-                    alert("تم الحفظ محلياً، ولكن حدث خطأ أثناء المزامنة مع الشيت!");
-                    console.log(err);
+                    console.log("تنبيه: تم الحفظ محلياً ولكن تعذر المزامنة السحابية", err);
                 });
-            } else {
-                alert("تم الحفظ محلياً بنجاح!");
-                closeAdminDashboard();
             }
         }
     </script>
